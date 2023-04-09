@@ -7,6 +7,9 @@ Created on Tue Feb 21 13:47:29 2023
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from tkinter import *
+from tkinter import ttk
 #%% Retainer variables
 Mag_list = []
 vect_list = []
@@ -14,10 +17,11 @@ unit_vect_list =[]
 WC_vect_list = []
 moment_list = []
 TP_moment_arm_list = []
-#%% Data in, need to fix pathing for git
+#%% Data in, maybe need to fix pathing for git
 points = pd.read_excel("Sus_Arm_points.xlsx").set_index("Points")
 WC = pd.read_excel("Sus_Wheel_center.xlsx").set_index("Points")
 TP = pd.read_excel("Sus_Center_of_tire_patch.xlsx").set_index("Points")
+WD = pd.read_excel("Sus_Wheel_center.xlsx")
 #%% Data Lists
 WC_list = list(WC)
 WC_axis_list = list(WC.index.values)
@@ -34,6 +38,8 @@ unit_vect_name_list = ['Xu', 'Yu', 'Zu']
 moment_name_list = ["Mx", "My", "Mz"]
 TP_name_list = ["Rx", "Ry", "Rz"]
 point_list = list(points.index.values)
+Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
+Tw = abs(TP["FR TP"][1]) + abs(TP["FR TP"][1]) #Finds Track Width
 #%% Analysis vectors and unit vectors
 for i in range(0, len(arm_list)):
     vect = [points[arm_list[i]][point_list[3]] - points[arm_list[i]][point_list[0]], points[arm_list[i]][point_list[4]] - points[arm_list[i]][point_list[1]], points[arm_list[i]][point_list[5]] - points[arm_list[i]][point_list[2]]]
@@ -68,7 +74,7 @@ unit_vect_frame.columns = arm_list
 mag_frame = pd.DataFrame(Mag_list, index = arm_list).transpose().set_axis(["Arm_Length"])
 vect_data = pd.concat([points, mag_frame, vect_frame, unit_vect_frame, WC_vect_frame])
 #%% Moment EQs: 
-for i in range(0, len(arm_list)): #moment arms for points
+for i in range(0, len(arm_list)): #moment arms for points to Wheel Center
     moment_calcs = [((unit_vect_frame[arm_list[i]][2])*(WC_vect_frame[arm_list[i]][1])) - ((unit_vect_frame[arm_list[i]][1])*(WC_vect_frame[arm_list[i]][2])), ((unit_vect_frame[arm_list[i]][2])*(WC_vect_frame[arm_list[i]][0])) - ((unit_vect_frame[arm_list[i]][0])*(WC_vect_frame[arm_list[i]][2])), ((unit_vect_frame[arm_list[i]][1])*(WC_vect_frame[arm_list[i]][0])) - ((unit_vect_frame[arm_list[i]][0])*(WC_vect_frame[arm_list[i]][1]))]
     moment_list.append(moment_calcs)
 moment_frame = pd.DataFrame(moment_list).transpose().set_axis(moment_name_list)
@@ -84,7 +90,7 @@ FR_matrix = matrix_data.iloc[:,0:6]
 FL_matrix = matrix_data.iloc[:,6:12]
 RR_matrix = matrix_data.iloc[:,12:18]
 RL_matrix = matrix_data.iloc[:,18:24]
-#%% Visual Graph of arms and points
+#%% Visual Graph of arms, points, moment arms, and centers
 fig = plt.figure(num = 1, clear = True)
 ax = fig.add_subplot(1,1,1, projection='3d')
 for i in range(0, len(arm_list)): #Arms and Points
@@ -117,4 +123,101 @@ ax.plot([0,0],[0,0], [0,0], color = 'b', label = "Moment Arms")
 ax.scatter(0,0,0, color = 'magenta', label = 'Origin', s = 40, zorder = 500) # Origin
 ax.legend(loc = 'best')
 ax.set(xlabel = "X (in)", ylabel = 'Y (in)', zlabel = 'Z (in)', title = "Geometry Setup Check")
-plt.show()
+plt.close()
+plt.show(block=True)
+
+#%% Forces GUI
+
+#%% Setup
+root = Tk()
+root.title("Car Parameters")
+mainframe = ttk.Frame(root, padding="2 4 12 12")
+mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
+#%%row 1
+ttk.Label(mainframe, text="Vehicle Weight").grid(column=1, row=1, sticky=W)
+WeV = DoubleVar()
+weight_entry = ttk.Entry(mainframe, width=7, textvariable=WeV)
+weight_entry.grid(column=2, row=1, sticky=(W, E))
+ttk.Label(mainframe, text="lbs").grid(column=3, row=1, sticky=W)
+# makes graph in window
+canvas = FigureCanvasTkAgg(fig, master=mainframe)
+canvas.draw()
+canvas.get_tk_widget().grid(column=4, row = 1, rowspan=11)
+#%% row 2 
+ttk.Label(mainframe, text="Front Weight Distribution").grid(column=1, row=2, sticky=W)
+FV = DoubleVar()
+F_entry = ttk.Entry(mainframe, width=7, textvariable=FV)
+F_entry.grid(column=2, row=2, sticky=(W, E))
+ttk.Label(mainframe, text="%").grid(column=3, row=2, sticky=W)
+#%% Row 3
+ttk.Label(mainframe, text="Rear Weight Distribution").grid(column=1, row=3, sticky=W)
+RV = DoubleVar()
+R_entry = ttk.Entry(mainframe, width=7, textvariable=RV)
+R_entry.grid(column=2, row=3, sticky=(W, E))
+ttk.Label(mainframe, text="%").grid(column=3, row=3, sticky=W)
+#%% Row 4 #Fixed
+ttk.Label(mainframe, text="Coef. of Friction (mu)").grid(column=1, row=4, sticky=W)
+muV = DoubleVar()
+mu_entry = ttk.Entry(mainframe, width=7, textvariable=muV)
+mu_entry.grid(column=2, row=4, sticky=(W, E))
+ttk.Label(mainframe, text=" ").grid(column=3, row=4, sticky=W)
+#%% Row 5 
+ttk.Label(mainframe, text="Center of Gravity Height").grid(column=1, row=5, sticky=W)
+hV = DoubleVar()
+h_entry = ttk.Entry(mainframe, width=7, textvariable=hV)
+h_entry.grid(column=2, row=5, sticky=(W, E))
+ttk.Label(mainframe, text="inches").grid(column=3, row=5, sticky=W)
+#%% Row 6 
+ttk.Label(mainframe, text="Wheel Radius").grid(column=1, row=6, sticky=W)
+rV = DoubleVar()
+r_entry = ttk.Entry(mainframe, width=7, textvariable=rV)
+r_entry.grid(column=2, row=6, sticky=(W, E))
+ttk.Label(mainframe, text="inches").grid(column=3, row=6, sticky=W)
+#%% Row 7 
+ttk.Label(mainframe, text="Static Front Weight").grid(column=1, row=7, sticky=W)
+WfsV = DoubleVar()
+Wfs_entry = ttk.Entry(mainframe, width=7, textvariable=WfsV)
+Wfs_entry.grid(column=2, row=7, sticky=(W, E))
+ttk.Label(mainframe, text="lbs").grid(column=3, row=7, sticky=W)
+#%% Row 8 
+ttk.Label(mainframe, text="Static Rear Weight").grid(column=1, row=8, sticky=W)
+WrsV = DoubleVar()
+Wrs_entry = ttk.Entry(mainframe, width=7, textvariable=WrsV)
+Wrs_entry.grid(column=2, row=8, sticky=(W, E))
+ttk.Label(mainframe, text="lbs").grid(column=3, row=8, sticky=W)
+#%% Row 9
+ttk.Label(mainframe, text="Center of Gravity to Rear Axle").grid(column=1, row=9, sticky=W)
+cV = DoubleVar()
+c_entry = ttk.Entry(mainframe, width=7, textvariable=cV)
+c_entry.grid(column=2, row=9, sticky=(W, E))
+ttk.Label(mainframe, text="inches").grid(column=3, row=9, sticky=W)
+#%% Row 10
+ttk.Label(mainframe, text="Center of Gravity to Front Axle").grid(column=1, row=10, sticky=W)
+bV = DoubleVar()
+b_entry = ttk.Entry(mainframe, width=7, textvariable=bV)
+b_entry.grid(column=2, row=10, sticky=(W, E))
+ttk.Label(mainframe, text="inches").grid(column=3, row=10, sticky=W)
+#%% Last Row
+def getInput():
+    We = WeV.get()
+    F = FV.get()
+    R = RV.get()
+    mu = muV.get()
+    h = hV.get()
+    r = rV.get()
+    Wfs = WfsV.get()
+    Wrs = WrsV.get()
+    c = cV.get()
+    b = bV.get()
+    root.destroy()
+    global params 
+    params = [We, F, R, mu, h, r, Wfs, Wrs, c, b]
+meters = StringVar()
+ttk.Label(mainframe, textvariable=meters).grid(column = 2, row = 11, sticky = (W, E))
+ttk.Button(mainframe, text="Calculate", command=getInput).grid(column = 3, row = 11)
+for child in mainframe.winfo_children(): 
+    child.grid_configure(padx=5, pady=5)
+root.bind("<Return>", getInput)
+root.mainloop()
