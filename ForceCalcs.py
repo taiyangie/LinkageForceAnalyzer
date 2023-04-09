@@ -26,6 +26,10 @@ Wfs = 212 #static front weight
 Wrs = 318 #static rear weight
 c = 24.4 #28 #CG to rear axle
 b = 36.6 #32.125 #front axle to CG
+mu = 1.34 #peak coef of friction
+G = 2.7 #(in-lb/psi) Rear Break gain (in-lb/psi)
+Pa = 586.71 # psi Rear Break application pressure
+
 
 #-------------------------------------------------------
 ## LINEAR ACCELERATION
@@ -59,15 +63,16 @@ Brake_Fyfl = 0
 Brake_Fyrr = 0
 Brake_Fyrl = 0
 #X
-Fxr = 2* 2.7*(586.71/r)
-Fxmf = (1.34 * (Wfs + (h/L)*Fxr)) / (1 - 1.34*(h/L))#6.97*(407.37/r)
+Fb = G*(Pa/r) #breaking force per wheel (Rear)
+Fxr = 2 * Fb #Linear breaking means FB is on two rear wheels
+Fxmf = (mu * (Wfs + (h/L)*Fxr)) / (1 - mu*(h/L))#6.97*(407.37/r)
 Dx = (Fxmf + Fxr)/W #1.7, this is off by .1
 
-Brake_Fxfr = (1.34* (Wfs + ((W*Dx*h)/L))) / 2
-Brake_Fxfl = (1.34* (Wfs + ((W*Dx*h)/L))) / 2
+Brake_Fxfr = (mu* (Wfs + ((W*Dx*h)/L))) / 2
+Brake_Fxfl = (mu* (Wfs + ((W*Dx*h)/L))) / 2
 
-Brake_Fxrr = (1.34 * (Wrs - ((W*Dx*h)/L))) / 2 #this is off by 2lb
-Brake_Fxrl = (1.34 * (Wrs - ((W*Dx*h)/L))) / 2
+Brake_Fxrr = (mu * (Wrs - ((W*Dx*h)/L))) / 2 #this is off by 2lb
+Brake_Fxrl = (mu * (Wrs - ((W*Dx*h)/L))) / 2
 #Z
 Brake_Fzfr =( Wfs + ((W*Dx*h)/L)) /2
 Brake_Fzfl =( Wfs + ((W*Dx*h)/L)) /2

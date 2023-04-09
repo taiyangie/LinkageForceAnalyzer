@@ -279,6 +279,8 @@ def colour_arms_graph(Flist, Scale ,num, title, cmp):
 #%% Inputs and calculating other constants
 [TR, LCAF, LCAR, UCAF, UCAR, PR] = [0, 1, 2, 3, 4, 5] # assigns a variable name that is the same as the index position so that a Force case can be looked up by tire position and arm name to get a specific force
 [W, F, R, mu, h, r, c, b, g_lin] = paramsLandB #links used varibales from GUI inputs to math for forces
+Wfs = W*F
+Wrs = W*R
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
 Tw = abs(TP["FR TP"][1]) + abs(TP["FR TP"][1]) #Finds Track Width
 #%% Calculating Linear Acc Forces at contact patch
