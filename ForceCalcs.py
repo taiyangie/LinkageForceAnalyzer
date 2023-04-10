@@ -65,7 +65,7 @@ Brake_Fyrl = 0
 #X
 Fb = G*(Pa/r) #breaking force per wheel (Rear)
 Fxr = 2 * Fb #Linear breaking means FB is on two rear wheels
-Fxmf = (mu * (Wfs + (h/L)*Fxr)) / (1 - mu*(h/L))#6.97*(407.37/r)
+Fxmf = (mu * (Wfs + (h/L)*Fxr)) / (1 - mu*(h/L))
 Dx = (Fxmf + Fxr)/W #1.7, this is off by .1
 
 Brake_Fxfr = (mu* (Wfs + ((W*Dx*h)/L))) / 2
@@ -74,7 +74,7 @@ Brake_Fxfl = (mu* (Wfs + ((W*Dx*h)/L))) / 2
 Brake_Fxrr = (mu * (Wrs - ((W*Dx*h)/L))) / 2 #this is off by 2lb
 Brake_Fxrl = (mu * (Wrs - ((W*Dx*h)/L))) / 2
 #Z
-Brake_Fzfr =( Wfs + ((W*Dx*h)/L)) /2
+Brake_Fzfr =(Wfs + ((W*Dx*h)/L)) /2
 Brake_Fzfl =( Wfs + ((W*Dx*h)/L)) /2
 
 Brake_Fzrr = (Wrs -((W*Dx*h)/L)) / 2 #these are all slightly off from the paper :(

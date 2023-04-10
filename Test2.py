@@ -42,6 +42,7 @@ unit_vect_name_list = ['Xu', 'Yu', 'Zu']
 moment_name_list = ["Mx", "My", "Mz"]
 TP_name_list = ["Rx", "Ry", "Rz"]
 LA_name_list = ['Fx LA', 'Fy LA', "Fz LA"]
+BR_name_list = ['Fx BR', 'Fy BR', "Fz BR"]
 tire_names = ["FR", "FL", "RR", "RL"]
 arm_names = ["TR", "LCAF", "LCAR", "UCAF", "UCAR", "PR"]
 point_list = list(points.index.values)
@@ -144,9 +145,10 @@ def getInputLandB():
     c = cV.get()
     b = bV.get()
     g = gV.get()
+    Dx = DxV.get()
     root.destroy()
     global paramsLandB
-    paramsLandB = [We, F, R, mu, h, r, c, b, g]
+    paramsLandB = [We, F, R, mu, h, r, c, b, g, Dx]
 
 def betterGUI(frs, i): 
     ttk.Label(mainframe, text=frs["Description"][i]).grid(column=1, row=i, sticky=W)
@@ -278,9 +280,9 @@ def colour_arms_graph(Flist, Scale ,num, title, cmp):
     return fig
 #%% Inputs and calculating other constants
 [TR, LCAF, LCAR, UCAF, UCAR, PR] = [0, 1, 2, 3, 4, 5] # assigns a variable name that is the same as the index position so that a Force case can be looked up by tire position and arm name to get a specific force
-[W, F, R, mu, h, r, c, b, g_lin] = paramsLandB #links used varibales from GUI inputs to math for forces
-Wfs = W*F
-Wrs = W*R
+[W, F, R, mu, h, r, c, b, g_lin, Dx] = paramsLandB #links used varibales from GUI inputs to math for forces
+Wfs = W*(F/100)
+Wrs = W*(R/100)
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
 Tw = abs(TP["FR TP"][1]) + abs(TP["FR TP"][1]) #Finds Track Width
 #%% Calculating Linear Acc Forces at contact patch
@@ -296,3 +298,19 @@ LA_Forces_List = list(LA_Forces['FR']) + list(LA_Forces['FL']) + list(LA_Forces[
 LA_Pos_Neg = colour_arms_graph_TC(LA_Forces_List, Pos_neg_Cmap_scale, 2, "Linear Acceleration Positive Negitive Force Visual", 'seismic')
 LA_ABS = colour_arms_graph(np.absolute(LA_Forces_List), ABS_scale, 3, "Linear Acceleration Absolute Value Force Visual", 'jet')
 #LA_Forces.to_excel("Force_due_to_Linear_Acceleration_of_" + str(g_lin) + "_G.xlsx")
+#%% Calculating Breaking forces
+FR_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2] #XYZ order
+FL_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2]
+RR_BR = [(mu * (Wrs - ((W*Dx*h)/Wb))) / 2, 0, (Wrs - ((W*Dx*h)/Wb)) / 2]
+RL_BR = [(mu * (Wrs - ((W*Dx*h)/Wb))) / 2, 0, (Wrs - ((W*Dx*h)/Wb)) / 2]
+Force_BR = [FR_BR, FL_BR, RR_BR, RL_BR]
+BR_col = ['FR_BR', 'FL_BR', 'RR_BR', 'RL_BR']
+BR_Forces = WForce_to_AForce(Force_BR, BR_name_list, BR_col, TP_frame, A_list)
+BR_Forces_List = list(BR_Forces['FR']) + list(BR_Forces['FL']) + list(BR_Forces['RR']) + list(BR_Forces['RL'])
+BR_Pos_Neg = colour_arms_graph_TC(BR_Forces_List, Pos_neg_Cmap_scale, 4, "Breaking Positive Negitive Force Visual", 'seismic')
+
+
+
+
+
+
