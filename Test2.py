@@ -20,12 +20,15 @@ unit_vect_list =[]
 WC_vect_list = []
 moment_list = []
 TP_moment_arm_list = []
+PCR_list = []
+Fmax_list = []
 #%% Data in, maybe need to fix pathing for git
 points = pd.read_excel("Sus_Arm_points.xlsx").set_index("Points")
 WC = pd.read_excel("Sus_Wheel_center.xlsx").set_index("Points")
 TP = pd.read_excel("Sus_Center_of_tire_patch.xlsx").set_index("Points")
 WD = pd.read_excel("Sus_Wheel_center.xlsx")
 LandB_var = pd.read_excel("variables.xlsx")
+Arm_mat = pd.read_excel("Arm_Materials.xlsx").set_index("Points")
 #%% Data Lists
 WC_list = list(WC)
 WC_axis_list = list(WC.index.values)
@@ -92,6 +95,15 @@ for i in range(0, len(TP_list)): #moment arms for Tire patch to wheel center
     TP_moment_arm_list.append(TP_moment_arm)
 TP_frame = pd.DataFrame(TP_moment_arm_list).transpose().set_axis(TP_name_list)
 TP_frame.columns = TP_list
+#%% Compression Calculations
+for i in range(len(arm_list)): 
+    P = ((np.pi ** 2) * (Arm_mat[arm_list[i]][5]) * (Arm_mat[arm_list[i]][4])) / (((Arm_mat[arm_list[i]][8]) * (mag_frame[arm_list[i]][0])) ** 2)
+    Fmax = (Arm_mat[arm_list[i]][7]) * (Arm_mat[arm_list[i]][3])
+    PCR_list.append(P)
+    Fmax_list.append(Fmax)
+PCR_frame = pd.DataFrame(PCR_list, index = arm_list).transpose().set_axis(["Critical Load (Buckling)"])    
+Fmax_frame = pd.DataFrame(Fmax_list, index = arm_list).transpose().set_axis(["Max Force (Tension)"])
+Fos_data = pd.concat([PCR_frame, Fmax_frame])
 #%% Matrix Data getting [A] matrix 
 matrix_data = pd.concat([unit_vect_frame, moment_frame])
 FR_matrix = matrix_data.iloc[:,0:6]
@@ -218,7 +230,17 @@ def WForce_to_AForce(F_list, index_list, Fcol, TP_R, A): #List of forces for a s
     armF.columns = tire_names #assigns all arms proper tire
     return armF #returns this matrix
 
-# Here make Force to Factor of Safety
+def Fos_maker(FList, name): #scaling for diverging colormap
+    Fos = []
+    for i in range(0, len(arm_list)): 
+        if FList[arm_list[i]][0] > 0: #positive / Compression
+            Fos_num = ((Fos_data[arm_list[i]][0]) / Arm_mat[arm_list[i]][3]) / (abs(FList[arm_list[i]][0]) / Arm_mat[arm_list[i]][3])
+            Fos.append(Fos_num)
+        elif FList[arm_list[i]][0] < 0: #negitive / Tension
+            Fos_num = (Fos_data[arm_list[i]][1]) / (abs(FList[arm_list[i]][0]))
+            Fos.append(Fos_num)
+    Fos_out = pd.DataFrame(Fos, index = arm_list).transpose().set_axis([name]) #Dataframe made of X matrixes, gives all forces in all arms in all tires and names index to arm names
+    return Fos_out #returns this matrix
 
 #%% Graph functions
 
@@ -278,6 +300,29 @@ def colour_arms_graph(Flist, Scale ,num, title, cmp):
     plt.show(block = True)
     plt.close()
     return fig
+
+def colour_arms_graph_FOS(Flist, Scale ,num, title, cmp):
+    dif = (max(Flist) - min(Flist))
+    fig = plt.figure(num = num, clear = True)
+    ax = fig.add_subplot(1,1,1, projection='3d')
+    cmap = mpl.colormaps[cmp]
+    norm = mpl.colors.Normalize(vmin = max(Flist), vmax = min(Flist))
+    fig.set_facecolor('grey')
+    ax.set_facecolor('grey')
+    cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), ax = ax, label = "Factor of Safety", ticks = [min(Flist), max(Flist)])
+    cbar.ax.set_yticklabels(["min:" + str(round(min(Flist), 1)), "max:" + str(round(max(Flist), 1))])
+    ax.set(xlabel = "X (in)", ylabel = 'Y (in)', zlabel = 'Z (in)', title = title)
+    ax.scatter(0,0,0, color = 'magenta', label = 'Origin', s = 40, zorder = 500) # Origin
+    ax.legend(loc = 'best')
+    for i in range(0, len(arm_list)): #Arms and Points
+        x = np.array([points[arm_list[i]][point_list[3]], points[arm_list[i]][point_list[0]]])
+        y = np.array([points[arm_list[i]][point_list[4]], points[arm_list[i]][point_list[1]]])
+        z = np.array([points[arm_list[i]][point_list[5]], points[arm_list[i]][point_list[2]]])
+        ax.scatter(x,y,z, c='k', s=20)
+        ax.plot(x,y,z, color= cmap(Scale(Flist, i)))
+    plt.show(block = True)
+    plt.close()
+    return fig
 #%% Inputs and calculating other constants
 [TR, LCAF, LCAR, UCAF, UCAR, PR] = [0, 1, 2, 3, 4, 5] # assigns a variable name that is the same as the index position so that a Force case can be looked up by tire position and arm name to get a specific force
 [W, F, R, mu, h, r, c, b, g_lin, Dx] = paramsLandB #links used varibales from GUI inputs to math for forces
@@ -292,11 +337,13 @@ RR_LA = [((((mu*W*b)/Wb) / (1-(h/Wb)*mu)) / 2), 0, ((W * ((b/Wb) + g_lin*(h/Wb))
 RL_LA = [((((mu*W*b)/Wb) / (1-(h/Wb)*mu)) / 2), 0, ((W * ((b/Wb) + g_lin*(h/Wb))) / 2)]
 Force_LA = [FR_LA, FL_LA, RR_LA, RL_LA] # List of Force lists for each tire
 LA_col = ['FR_LA', 'FL_LA', 'RR_LA', 'RL_LA'] #List to help call columns for math
-#%% Linear acceleration forces at Arms Viaual
 LA_Forces = WForce_to_AForce(Force_LA, LA_name_list, LA_col, TP_frame, A_list) #Wheel Force to arm Force
 LA_Forces_List = list(LA_Forces['FR']) + list(LA_Forces['FL']) + list(LA_Forces['RR']) + list(LA_Forces['RL'])
+LA_Forces_Frame = pd.DataFrame(LA_Forces_List, index = arm_list).transpose().set_axis(["Acceleration Force"])
+LA_Fos = Fos_maker(LA_Forces_Frame, "Linear Acceleration FOS")
+#%% Linear acceleration forces at Arms Viaual
 LA_Pos_Neg = colour_arms_graph_TC(LA_Forces_List, Pos_neg_Cmap_scale, 2, "Linear Acceleration Positive Negitive Force Visual", 'seismic')
-LA_ABS = colour_arms_graph(np.absolute(LA_Forces_List), ABS_scale, 3, "Linear Acceleration Absolute Value Force Visual", 'jet')
+LA_FOS = colour_arms_graph_FOS(np.absolute(list(LA_Fos.transpose()[LA_Fos.index.values[0]])), ABS_scale, 3, "Linear Acceleration FOS", 'jet_r')
 #LA_Forces.to_excel("Force_due_to_Linear_Acceleration_of_" + str(g_lin) + "_G.xlsx")
 #%% Calculating Breaking forces
 FR_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2] #XYZ order
@@ -307,10 +354,9 @@ Force_BR = [FR_BR, FL_BR, RR_BR, RL_BR]
 BR_col = ['FR_BR', 'FL_BR', 'RR_BR', 'RL_BR']
 BR_Forces = WForce_to_AForce(Force_BR, BR_name_list, BR_col, TP_frame, A_list)
 BR_Forces_List = list(BR_Forces['FR']) + list(BR_Forces['FL']) + list(BR_Forces['RR']) + list(BR_Forces['RL'])
+BR_Forces_Frame = pd.DataFrame(BR_Forces_List, index = arm_list).transpose().set_axis(["Breaking Force"])
+BR_Fos = Fos_maker(BR_Forces_Frame, "Linear Acceleration FOS")
+#%% Breaking Visualisation 
 BR_Pos_Neg = colour_arms_graph_TC(BR_Forces_List, Pos_neg_Cmap_scale, 4, "Breaking Positive Negitive Force Visual", 'seismic')
-
-
-
-
-
+BR_FOS = colour_arms_graph_FOS(np.absolute(list(BR_Fos.transpose()[BR_Fos.index.values[0]])), ABS_scale, 3, "Linear Acceleration FOS", 'jet_r')
 
