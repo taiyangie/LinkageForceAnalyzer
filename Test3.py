@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Created on Sat Apr 15 22:38:51 2023
+
+@author: william_hess
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
 Created on Wed Mar 29 01:31:40 2023
 
 @author: william_hess
@@ -50,7 +57,7 @@ tire_names = ["FR", "FL", "RR", "RL"]
 arm_names = ["TR", "LCAF", "LCAR", "UCAF", "UCAR", "PR"]
 point_list = list(points.index.values)
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
-Tw = abs(WC["FR TP"][1]) + abs(WC["FR TP"][1]) #Finds Track Width
+Tw = abs(WC["FR WC"][1]) + abs(WC["FR WC"][1]) #Finds Track Width
 #%% Analysis vectors and unit vectors
 for i in range(0, len(arm_list)):
     vect = [points[arm_list[i]][point_list[3]] - points[arm_list[i]][point_list[0]], points[arm_list[i]][point_list[4]] - points[arm_list[i]][point_list[1]], points[arm_list[i]][point_list[5]] - points[arm_list[i]][point_list[2]]]
@@ -251,12 +258,15 @@ def Pos_neg_Cmap_scale(FList, j): #scaling for diverging colormap
     elif FList[j] < 0: 
        cm_num = (FList[j] / min(FList)) / 2
        return 0.5 - cm_num
-   
-def ABS_scale(FList, j): 
-    abs_list = np.absolute(np.array(FList))
-    cm_num = abs(FList[j]) / max(abs_list)
-    return cm_num
-    
+
+def FOS_scale(Flist, j):
+    if Flist[j] >= 10: 
+        cm_num = 0.99
+        return cm_num
+    else: 
+        cm_num2 = Flist[j] / 10
+        return cm_num2
+ 
 
 def colour_arms_graph_TC(Flist, Scale ,num, title, cmp):
     fig = plt.figure(num = num, clear = True)
@@ -280,37 +290,15 @@ def colour_arms_graph_TC(Flist, Scale ,num, title, cmp):
     plt.close()
     return fig
 
-def colour_arms_graph(Flist, Scale ,num, title, cmp):
-    fig = plt.figure(num = num, clear = True)
-    ax = fig.add_subplot(1,1,1, projection='3d')
-    cmap = mpl.colormaps[cmp]
-    norm = mpl.colors.Normalize(vmin = min(Flist), vmax = max(Flist))
-    fig.set_facecolor('grey')
-    ax.set_facecolor('grey')
-    fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), ax = ax, label = "Force (lbs)")
-    ax.set(xlabel = "X (in)", ylabel = 'Y (in)', zlabel = 'Z (in)', title = title)
-    ax.scatter(0,0,0, color = 'magenta', label = 'Origin', s = 40, zorder = 500) # Origin
-    ax.legend(loc = 'best')
-    for i in range(0, len(arm_list)): #Arms and Points
-        x = np.array([points[arm_list[i]][point_list[3]], points[arm_list[i]][point_list[0]]])
-        y = np.array([points[arm_list[i]][point_list[4]], points[arm_list[i]][point_list[1]]])
-        z = np.array([points[arm_list[i]][point_list[5]], points[arm_list[i]][point_list[2]]])
-        ax.scatter(x,y,z, c='k', s=20)
-        ax.plot(x,y,z, color= cmap(Scale(Flist, i)))
-    plt.show(block = True)
-    plt.close()
-    return fig
-
 def colour_arms_graph_FOS(Flist, Scale ,num, title, cmp):
-    dif = (max(Flist) - min(Flist))
     fig = plt.figure(num = num, clear = True)
     ax = fig.add_subplot(1,1,1, projection='3d')
     cmap = mpl.colormaps[cmp]
-    norm = mpl.colors.Normalize(vmin = min(Flist), vmax = max(Flist))
+    norm = mpl.colors.Normalize(vmin = 0, vmax = 10)
     fig.set_facecolor('grey')
     ax.set_facecolor('grey')
-    cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), ax = ax, label = "Factor of Safety", ticks = [min(Flist), max(Flist)])
-    cbar.ax.set_yticklabels(["min:" + str(round(min(Flist), 1)), "max:" + str(round(max(Flist), 1))])
+    cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), ax = ax, label = "Factor of Safety", ticks = [0, min(Flist), 10])
+    cbar.ax.set_yticklabels(['0', "min:" + str(round(min(Flist), 1)), "10+ FOS"])
     ax.set(xlabel = "X (in)", ylabel = 'Y (in)', zlabel = 'Z (in)', title = title)
     ax.scatter(0,0,0, color = 'magenta', label = 'Origin', s = 40, zorder = 500) # Origin
     ax.legend(loc = 'best')
@@ -329,7 +317,7 @@ def colour_arms_graph_FOS(Flist, Scale ,num, title, cmp):
 Wfs = W*(F/100)
 Wrs = W*(R/100)
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
-Tw = abs(WC["FR TP"][1]) + abs(WC["FR TP"][1]) #Finds Track Width
+Tw = abs(WC["FR WC"][1]) + abs(WC["FR WC"][1]) #Finds Track Width
 #%% Calculating Linear Acc Forces at contact patch
 FR_LA = [0, 0, ((W * ((c/Wb) - g_lin*(h/Wb))) / 2)] #XYZ order for forces in each arm
 FL_LA = [0, 0, ((W * ((c/Wb) - g_lin*(h/Wb))) / 2)]
@@ -343,7 +331,7 @@ LA_Forces_Frame = pd.DataFrame(LA_Forces_List, index = arm_list).transpose().set
 LA_Fos = Fos_maker(LA_Forces_Frame, "Linear Acceleration FOS")
 #%% Linear acceleration forces at Arms Viaual
 LA_Pos_Neg = colour_arms_graph_TC(LA_Forces_List, Pos_neg_Cmap_scale, 2, "Linear Acceleration Positive Negitive Force Visual", 'seismic')
-LA_FOS = colour_arms_graph_FOS(np.absolute(list(LA_Fos.transpose()[LA_Fos.index.values[0]])), ABS_scale, 3, "Linear Acceleration FOS", 'jet_r')
+LA_FOS_Test = colour_arms_graph_FOS(list(LA_Fos.transpose()[LA_Fos.index.values[0]]), FOS_scale, 3, "Linear Acceleration FOS", 'jet_r')
 #LA_Forces.to_excel("Force_due_to_Linear_Acceleration_of_" + str(g_lin) + "_G.xlsx")
 #%% Calculating Breaking forces
 FR_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2] #XYZ order
@@ -358,8 +346,7 @@ BR_Forces_Frame = pd.DataFrame(BR_Forces_List, index = arm_list).transpose().set
 BR_Fos = Fos_maker(BR_Forces_Frame, "Breaking FOS")
 #%% Breaking Visualisation 
 BR_Pos_Neg = colour_arms_graph_TC(BR_Forces_List, Pos_neg_Cmap_scale, 4, "Breaking Positive Negitive Force Visual", 'seismic')
-BR_FOS = colour_arms_graph_FOS(np.absolute(list(BR_Fos.transpose()[BR_Fos.index.values[0]])), ABS_scale, 3, "Breaking FOS", 'jet_r')
-
+BR_FOS_Test = colour_arms_graph_FOS(list(BR_Fos.transpose()[BR_Fos.index.values[0]]), FOS_scale, 3, "Breaking FOS", 'jet_r')
 
 
 
