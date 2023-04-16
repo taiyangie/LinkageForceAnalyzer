@@ -4,14 +4,8 @@
 Created on Sat Apr 15 22:38:51 2023
 
 @author: william_hess
-"""
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Mar 29 01:31:40 2023
 
-@author: william_hess
-Same as SUS_calcs2 but without GUI Output
+better visuals than Test 2, should be final version, gives report of cases at the end
 """
 import pandas as pd
 from tkinter import *
@@ -53,11 +47,12 @@ moment_name_list = ["Mx", "My", "Mz"]
 TP_name_list = ["Rx", "Ry", "Rz"]
 LA_name_list = ['Fx LA', 'Fy LA', "Fz LA"]
 BR_name_list = ['Fx BR', 'Fy BR', "Fz BR"]
+SSC_name_list = ['Fx SSC', 'Fy SSC', "Fz SSC"]
 tire_names = ["FR", "FL", "RR", "RL"]
 arm_names = ["TR", "LCAF", "LCAR", "UCAF", "UCAR", "PR"]
 point_list = list(points.index.values)
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
-Tw = abs(WC["FR WC"][1]) + abs(WC["FR WC"][1]) #Finds Track Width
+Tw = abs(WC["FR WC"][1]) + abs(WC["FL WC"][1]) #Finds Track Width
 #%% Analysis vectors and unit vectors
 for i in range(0, len(arm_list)):
     vect = [points[arm_list[i]][point_list[3]] - points[arm_list[i]][point_list[0]], points[arm_list[i]][point_list[4]] - points[arm_list[i]][point_list[1]], points[arm_list[i]][point_list[5]] - points[arm_list[i]][point_list[2]]]
@@ -161,13 +156,11 @@ def getInputLandB():
     mu = muV.get()
     h = hV.get()
     r = rV.get()
-    c = cV.get()
-    b = bV.get()
     g = gV.get()
     Dx = DxV.get()
     root.destroy()
     global paramsLandB
-    paramsLandB = [We, F, R, mu, h, r, c, b, g, Dx]
+    paramsLandB = [We, F, R, mu, h, r, g, Dx]
 
 def betterGUI(frs, i): 
     ttk.Label(mainframe, text=frs["Description"][i]).grid(column=1, row=i, sticky=W)
@@ -272,10 +265,10 @@ def colour_arms_graph_TC(Flist, Scale ,num, title, cmp):
     fig = plt.figure(num = num, clear = True)
     ax = fig.add_subplot(1,1,1, projection='3d')
     cmap = mpl.colormaps[cmp]
-    norm = mpl.colors.Normalize(vmin = max(Flist), vmax = min(Flist))
+    norm = mpl.colors.Normalize(vmin = min(Flist), vmax = max(Flist))
     fig.set_facecolor('grey')
     ax.set_facecolor('grey')
-    cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), ax = ax, label = "Force (lbs)", ticks = [min(Flist), (min(Flist) + ((min(Flist) + max(Flist))/2)) / 2 , ((min(Flist) + max(Flist))/2), (max(Flist) + ((min(Flist) + max(Flist))/2)) / 2, max(Flist)])
+    cbar = fig.colorbar(mpl.cm.ScalarMappable(norm = norm, cmap = cmap), ax = ax, label = "<-- Extention | Compression -->", ticks = [min(Flist), (min(Flist) + ((min(Flist) + max(Flist))/2)) / 2 , ((min(Flist) + max(Flist))/2), (max(Flist) + ((min(Flist) + max(Flist))/2)) / 2, max(Flist)])
     cbar.ax.set_yticklabels([str(round(min(Flist), 1)), str(round((min(Flist)/2), 1)),  '0', str(round((max(Flist)/2), 1)),  str(round(max(Flist), 1))])
     ax.set(xlabel = "X (in)", ylabel = 'Y (in)', zlabel = 'Z (in)', title = title)
     ax.scatter(0,0,0, color = 'magenta', label = 'Origin', s = 40, zorder = 500) # Origin
@@ -313,11 +306,14 @@ def colour_arms_graph_FOS(Flist, Scale ,num, title, cmp):
     return fig
 #%% Inputs and calculating other constants
 [TR, LCAF, LCAR, UCAF, UCAR, PR] = [0, 1, 2, 3, 4, 5] # assigns a variable name that is the same as the index position so that a Force case can be looked up by tire position and arm name to get a specific force
-[W, F, R, mu, h, r, c, b, g_lin, Dx] = paramsLandB #links used varibales from GUI inputs to math for forces
+[W, F, R, mu, h, r, g_lin, Dx] = paramsLandB #links used varibales from GUI inputs to math for forces
 Wfs = W*(F/100)
 Wrs = W*(R/100)
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
-Tw = abs(WC["FR WC"][1]) + abs(WC["FR WC"][1]) #Finds Track Width
+Twf = abs(WC["FR WC"][1]) + abs(WC["FL WC"][1]) #Finds front Track Width (Front wheel center to front wheel center)
+Twr = abs(WC["RR WC"][1]) + abs(WC["RL WC"][1]) #Finds Rear Track Width (Front wheel Center to front wheel center)
+c = (F/100) * Wb
+b = Wb - c
 #%% Calculating Linear Acc Forces at contact patch
 FR_LA = [0, 0, ((W * ((c/Wb) - g_lin*(h/Wb))) / 2)] #XYZ order for forces in each arm
 FL_LA = [0, 0, ((W * ((c/Wb) - g_lin*(h/Wb))) / 2)]
@@ -327,12 +323,11 @@ Force_LA = [FR_LA, FL_LA, RR_LA, RL_LA] # List of Force lists for each tire
 LA_col = ['FR_LA', 'FL_LA', 'RR_LA', 'RL_LA'] #List to help call columns for math
 LA_Forces = WForce_to_AForce(Force_LA, LA_name_list, LA_col, TP_frame, A_list) #Wheel Force to arm Force
 LA_Forces_List = list(LA_Forces['FR']) + list(LA_Forces['FL']) + list(LA_Forces['RR']) + list(LA_Forces['RL'])
-LA_Forces_Frame = pd.DataFrame(LA_Forces_List, index = arm_list).transpose().set_axis(["Acceleration Force"])
-LA_Fos = Fos_maker(LA_Forces_Frame, "Linear Acceleration FOS")
+LA_Forces_Frame = pd.DataFrame(LA_Forces_List, index = arm_list).transpose().set_axis(["Linear Acceleration of " + str(g_lin) +"G (lbf)"])
+LA_Fos = Fos_maker(LA_Forces_Frame, "Linear Acceleration of " + str(g_lin) +" G (FOS)")
 #%% Linear acceleration forces at Arms Viaual
-LA_Pos_Neg = colour_arms_graph_TC(LA_Forces_List, Pos_neg_Cmap_scale, 2, "Linear Acceleration Positive Negitive Force Visual", 'seismic')
-LA_FOS_Test = colour_arms_graph_FOS(list(LA_Fos.transpose()[LA_Fos.index.values[0]]), FOS_scale, 3, "Linear Acceleration FOS", 'jet_r')
-#LA_Forces.to_excel("Force_due_to_Linear_Acceleration_of_" + str(g_lin) + "_G.xlsx")
+LA_Pos_Neg = colour_arms_graph_TC(LA_Forces_List, Pos_neg_Cmap_scale, 2, "Linear Acceleration of " + str(g_lin) + "G Positive Negitive Force Visual", 'seismic')
+LA_FOS_Test = colour_arms_graph_FOS(list(LA_Fos.transpose()[LA_Fos.index.values[0]]), FOS_scale, 3, "Linear Acceleration of " + str(g_lin) + "G: FOS Plot", 'jet_r')
 #%% Calculating Breaking forces
 FR_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2] #XYZ order
 FL_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2]
@@ -342,11 +337,38 @@ Force_BR = [FR_BR, FL_BR, RR_BR, RL_BR]
 BR_col = ['FR_BR', 'FL_BR', 'RR_BR', 'RL_BR']
 BR_Forces = WForce_to_AForce(Force_BR, BR_name_list, BR_col, TP_frame, A_list)
 BR_Forces_List = list(BR_Forces['FR']) + list(BR_Forces['FL']) + list(BR_Forces['RR']) + list(BR_Forces['RL'])
-BR_Forces_Frame = pd.DataFrame(BR_Forces_List, index = arm_list).transpose().set_axis(["Breaking Force"])
-BR_Fos = Fos_maker(BR_Forces_Frame, "Breaking FOS")
+BR_Forces_Frame = pd.DataFrame(BR_Forces_List, index = arm_list).transpose().set_axis(["Breaking at " + str(Dx) + "G (lbf)"])
+BR_Fos = Fos_maker(BR_Forces_Frame, "Breaking at" + str(Dx) + "G (FOS)")
 #%% Breaking Visualisation 
-BR_Pos_Neg = colour_arms_graph_TC(BR_Forces_List, Pos_neg_Cmap_scale, 4, "Breaking Positive Negitive Force Visual", 'seismic')
-BR_FOS_Test = colour_arms_graph_FOS(list(BR_Fos.transpose()[BR_Fos.index.values[0]]), FOS_scale, 3, "Breaking FOS", 'jet_r')
+BR_Pos_Neg = colour_arms_graph_TC(BR_Forces_List, Pos_neg_Cmap_scale, 4, "Breaking Deceleration of " + str(Dx) + "G Positive Negitive Force Visual", 'seismic')
+BR_FOS_Test = colour_arms_graph_FOS(list(BR_Fos.transpose()[BR_Fos.index.values[0]]), FOS_scale, 3, "Breaking Deceleration of " + str(Dx) + "G: FOS Plot", 'jet_r')
+#%% Steady State Cornering
+FR_SSC = [0, 0, 0]
+FL_SSC = [0, 0, 0]
+RR_SSC = [0, 0, 0]
+RL_SSC = [0, 0, 0]
+Force_SSC = [FR_SSC, FL_SSC, RR_SSC, RL_SSC]
+SSC_col = ['FR_SSC', 'FL_SSC', 'RR_SSC', 'RL_SSC']
+SSC_Forces = WForce_to_AForce(Force_SSC, SSC_name_list, SSC_col, TP_frame, A_list)
+SSC_Forces_List = list(SSC_Forces['FR']) + list(SSC_Forces['FL']) + list(SSC_Forces['RR']) + list(SSC_Forces['RL'])
+# SSC_Forces_Frame = pd.DataFrame(SSC_Forces_List, index = arm_list).transpose().set_axis(["Steady State Cornering at " + str() + "G (lbf)"])
+# SSC_Fos = Fos_maker(SSC_Forces_Frame, "Steady State Cornering at" + str() + "G (FOS)")
+
+
+
+
+
+#%% End Spreadsheets: Gives a final report in a spreadsheet
+#LA_Forces.to_excel("Force_due_to_Linear_Acceleration_of_" + str(g_lin) + "_G.xlsx")
+#BR_Forces.to_excel("Force_due_to_Linear_Deceleration_of_" + str(g_lin) + "_G.xlsx")
+Arm_info = pd.concat([mag_frame, Arm_mat, Fos_data]) # gives all information on arm material, lengths, and critical loads
+#Overview_Frame = pd.concat([LA_Forces_Frame, LA_Fos, BR_Forces_Frame, BR_Fos, SSC_Forces_Frame, SSC_Fos])
+
+
+
+
+
+
 
 
 
