@@ -29,6 +29,7 @@ WC = pd.read_excel("Sus_Wheel_center.xlsx").set_index("Points")
 TP = pd.read_excel("Sus_Center_of_tire_patch.xlsx").set_index("Points")
 WD = pd.read_excel("Sus_Wheel_center.xlsx")
 LandB_var = pd.read_excel("variables.xlsx")
+SSC_var = pd.read_excel("Variable_SSC.xlsx")
 Arm_mat = pd.read_excel("Arm_Materials.xlsx").set_index("Points")
 #%% Data Lists
 WC_list = list(WC)
@@ -161,6 +162,17 @@ def getInputLandB():
     root.destroy()
     global paramsLandB
     paramsLandB = [We, F, R, mu, h, r, g, Dx]
+    
+def getInputSSC():
+    V = VV.get()
+    T_rad = T_radV.get()
+    Zrf = ZrfV.get()
+    Zrr = ZrrV.get()
+    K_f = K_fV.get()
+    K_r = K_rV.get()
+    root.destroy()
+    global paramsSSC
+    paramsSSC = [V, T_rad, Zrf, Zrr, K_f, K_r]
 
 def betterGUI(frs, i): 
     ttk.Label(mainframe, text=frs["Description"][i]).grid(column=1, row=i, sticky=W)
@@ -306,19 +318,21 @@ def colour_arms_graph_FOS(Flist, Scale ,num, title, cmp):
     return fig
 #%% Inputs and calculating other constants
 [TR, LCAF, LCAR, UCAF, UCAR, PR] = [0, 1, 2, 3, 4, 5] # assigns a variable name that is the same as the index position so that a Force case can be looked up by tire position and arm name to get a specific force
-[W, F, R, mu, h, r, g_lin, Dx] = paramsLandB #links used varibales from GUI inputs to math for forces
-Wfs = W*(F/100)
-Wrs = W*(R/100)
+[We, F, R, mu, h, r, g_lin, Dx] = paramsLandB #links used varibales from GUI inputs to math for forces
+Wfs = We*(F/100)
+Wrs = We*(R/100)
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
 Twf = abs(WC["FR WC"][1]) + abs(WC["FL WC"][1]) #Finds front Track Width (Front wheel center to front wheel center)
 Twr = abs(WC["RR WC"][1]) + abs(WC["RL WC"][1]) #Finds Rear Track Width (Front wheel Center to front wheel center)
 c = (F/100) * Wb
 b = Wb - c
+faxle_z = WC["FR WC"][2]
+raxle_z = WC["RR WC"][2]
 #%% Calculating Linear Acc Forces at contact patch
-FR_LA = [0, 0, ((W * ((c/Wb) - g_lin*(h/Wb))) / 2)] #XYZ order for forces in each arm
-FL_LA = [0, 0, ((W * ((c/Wb) - g_lin*(h/Wb))) / 2)]
-RR_LA = [((((mu*W*b)/Wb) / (1-(h/Wb)*mu)) / 2), 0, ((W * ((b/Wb) + g_lin*(h/Wb))) / 2)]
-RL_LA = [((((mu*W*b)/Wb) / (1-(h/Wb)*mu)) / 2), 0, ((W * ((b/Wb) + g_lin*(h/Wb))) / 2)]
+FR_LA = [0, 0, ((We * ((c/Wb) - g_lin*(h/Wb))) / 2)] #XYZ order for forces in each arm
+FL_LA = [0, 0, ((We * ((c/Wb) - g_lin*(h/Wb))) / 2)]
+RR_LA = [((((mu*We*b)/Wb) / (1-(h/Wb)*mu)) / 2), 0, ((We * ((b/Wb) + g_lin*(h/Wb))) / 2)]
+RL_LA = [((((mu*We*b)/Wb) / (1-(h/Wb)*mu)) / 2), 0, ((We * ((b/Wb) + g_lin*(h/Wb))) / 2)]
 Force_LA = [FR_LA, FL_LA, RR_LA, RL_LA] # List of Force lists for each tire
 LA_col = ['FR_LA', 'FL_LA', 'RR_LA', 'RL_LA'] #List to help call columns for math
 LA_Forces = WForce_to_AForce(Force_LA, LA_name_list, LA_col, TP_frame, A_list) #Wheel Force to arm Force
@@ -329,10 +343,10 @@ LA_Fos = Fos_maker(LA_Forces_Frame, "Linear Acceleration of " + str(g_lin) +" G 
 LA_Pos_Neg = colour_arms_graph_TC(LA_Forces_List, Pos_neg_Cmap_scale, 2, "Linear Acceleration of " + str(g_lin) + "G Positive Negitive Force Visual", 'seismic')
 LA_FOS_Test = colour_arms_graph_FOS(list(LA_Fos.transpose()[LA_Fos.index.values[0]]), FOS_scale, 3, "Linear Acceleration of " + str(g_lin) + "G: FOS Plot", 'jet_r')
 #%% Calculating Breaking forces
-FR_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2] #XYZ order
-FL_BR = [(mu * (Wfs + ((W*Dx*h)/Wb))) / 2, 0, (Wfs + ((W*Dx*h)/Wb)) / 2]
-RR_BR = [(mu * (Wrs - ((W*Dx*h)/Wb))) / 2, 0, (Wrs - ((W*Dx*h)/Wb)) / 2]
-RL_BR = [(mu * (Wrs - ((W*Dx*h)/Wb))) / 2, 0, (Wrs - ((W*Dx*h)/Wb)) / 2]
+FR_BR = [(mu * (Wfs + ((We*Dx*h)/Wb))) / 2, 0, (Wfs + ((We*Dx*h)/Wb)) / 2] #XYZ order
+FL_BR = [(mu * (Wfs + ((We*Dx*h)/Wb))) / 2, 0, (Wfs + ((We*Dx*h)/Wb)) / 2]
+RR_BR = [(mu * (Wrs - ((We*Dx*h)/Wb))) / 2, 0, (Wrs - ((We*Dx*h)/Wb)) / 2]
+RL_BR = [(mu * (Wrs - ((We*Dx*h)/Wb))) / 2, 0, (Wrs - ((We*Dx*h)/Wb)) / 2]
 Force_BR = [FR_BR, FL_BR, RR_BR, RL_BR]
 BR_col = ['FR_BR', 'FL_BR', 'RR_BR', 'RL_BR']
 BR_Forces = WForce_to_AForce(Force_BR, BR_name_list, BR_col, TP_frame, A_list)
@@ -342,6 +356,20 @@ BR_Fos = Fos_maker(BR_Forces_Frame, "Breaking at" + str(Dx) + "G (FOS)")
 #%% Breaking Visualisation 
 BR_Pos_Neg = colour_arms_graph_TC(BR_Forces_List, Pos_neg_Cmap_scale, 4, "Breaking Deceleration of " + str(Dx) + "G Positive Negitive Force Visual", 'seismic')
 BR_FOS_Test = colour_arms_graph_FOS(list(BR_Fos.transpose()[BR_Fos.index.values[0]]), FOS_scale, 3, "Breaking Deceleration of " + str(Dx) + "G: FOS Plot", 'jet_r')
+#%% Steady State Cornering GUI
+root = Tk()  
+root.title("SSC parameters")
+mainframe = ttk.Frame(root, padding="2 4 12 12")
+mainframe.grid(column=0, row=0, sticky=(N, W, E, S))
+root.columnconfigure(0, weight=1)
+root.rowconfigure(0, weight=1)
+ForceParameterGenerator(SSC_var, getInputSSC)
+root.bind("<Return>", getInputSSC) 
+root.mainloop()
+#%% Inputs and calculating other constraints
+[V, T_rad, Zrf, Zrr, K_f, K_r] = paramsSSC
+
+
 #%% Steady State Cornering
 FR_SSC = [0, 0, 0]
 FL_SSC = [0, 0, 0]
