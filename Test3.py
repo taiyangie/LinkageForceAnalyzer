@@ -391,8 +391,11 @@ SSC_Forces_List = list(SSC_Forces['FR']) + list(SSC_Forces['FL']) + list(SSC_For
 #BR_Forces.to_excel("Force_due_to_Linear_Deceleration_of_" + str(g_lin) + "_G.xlsx")
 Arm_info = pd.concat([mag_frame, Arm_mat, Fos_data]) # gives all information on arm material, lengths, and critical loads
 #Overview_Frame = pd.concat([LA_Forces_Frame, LA_Fos, BR_Forces_Frame, BR_Fos, SSC_Forces_Frame, SSC_Fos])
-
-
+"""
+with pd.ExcelWriter('output.xlsx') as writer:
+    df1.to_excel(writer, sheet_name='Sheet_name_1')
+    df2.to_excel(writer, sheet_name='Sheet_name_2')
+"""
 
 
 
