@@ -159,9 +159,10 @@ def getInputLandB():
     r = rV.get()
     g = gV.get()
     Dx = DxV.get()
+    Version_number = Version_numberV.get()
     root.destroy()
     global paramsLandB
-    paramsLandB = [We, F, R, mu, h, r, g, Dx]
+    paramsLandB = [We, F, R, mu, h, r, g, Dx, Version_number]
     
 def getInputSSC():
     V = VV.get()
@@ -318,7 +319,7 @@ def colour_arms_graph_FOS(Flist, Scale ,num, title, cmp):
     return fig
 #%% Inputs and calculating other constants
 [TR, LCAF, LCAR, UCAF, UCAR, PR] = [0, 1, 2, 3, 4, 5] # assigns a variable name that is the same as the index position so that a Force case can be looked up by tire position and arm name to get a specific force
-[We, F, R, mu, h, r, g_lin, Dx] = paramsLandB #links used varibales from GUI inputs to math for forces
+[We, F, R, mu, h, r, g_lin, Dx, Version_number] = paramsLandB #links used varibales from GUI inputs to math for forces
 Wfs = We*(F/100)
 Wrs = We*(R/100)
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
@@ -390,12 +391,12 @@ SSC_Forces_List = list(SSC_Forces['FR']) + list(SSC_Forces['FL']) + list(SSC_For
 #LA_Forces.to_excel("Force_due_to_Linear_Acceleration_of_" + str(g_lin) + "_G.xlsx")
 #BR_Forces.to_excel("Force_due_to_Linear_Deceleration_of_" + str(g_lin) + "_G.xlsx")
 Arm_info = pd.concat([mag_frame, Arm_mat, Fos_data]) # gives all information on arm material, lengths, and critical loads
-#Overview_Frame = pd.concat([LA_Forces_Frame, LA_Fos, BR_Forces_Frame, BR_Fos, SSC_Forces_Frame, SSC_Fos])
-"""
-with pd.ExcelWriter('output.xlsx') as writer:
-    df1.to_excel(writer, sheet_name='Sheet_name_1')
-    df2.to_excel(writer, sheet_name='Sheet_name_2')
-"""
+Overview_Frame = pd.concat([LA_Forces_Frame, LA_Fos, BR_Forces_Frame, BR_Fos])
+
+with pd.ExcelWriter('Summary_report_' + str(Version_number) +'.xlsx') as writer:
+    Arm_info.to_excel(writer, sheet_name='Arm_setup_information')
+    Overview_Frame.to_excel(writer, sheet_name='Cases_and_FOS')
+
 
 
 
