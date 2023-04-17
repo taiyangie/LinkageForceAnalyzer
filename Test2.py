@@ -13,6 +13,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 import matplotlib as mpl
+
+
 #%% Retainer variables
 Mag_list = []
 vect_list = []
