@@ -89,8 +89,8 @@ gravity = 9.81
 # Lateral Acceleration
 
 
-cg_to_f = Wfs * L / W # cg distance to front axle, m
-cg_to_r = Wrs * L / W # cg distance to rear axle, m
+cg_to_f = Wfs * L / W # cg distance to front axle, m, b in test 3
+cg_to_r = Wrs * L / W # cg distance to rear axle, m, c in test 3
 
 corner_v = 10.5 # m/s, from past skidpad data THIS IS AN INPUT
 corner_r = 18.25 / 2 # skidpad radius
