@@ -325,8 +325,8 @@ def colour_arms_graph_FOS(Flist, Scale ,num, title, cmp):
 #%% Inputs and calculating other constants
 [TR, LCAF, LCAR, UCAF, UCAR, PR] = [0, 1, 2, 3, 4, 5] # assigns a variable name that is the same as the index position so that a Force case can be looked up by tire position and arm name to get a specific force
 [We, F, R, mu, h, r, g_lin, Dx, G_bump, Version_number] = paramsLandB #links used varibales from GUI inputs to math for forces
-Wfs = We*(F/100)
-Wrs = We*(R/100)
+Wfs = We*(F/100) #Front static weight
+Wrs = We*(R/100) #Rear stati wright
 Wb = TP["RR TP"][0] - TP["FR TP"][0] # finds Wheel Base
 Twf = abs(WC["FR WC"][1]) + abs(WC["FL WC"][1]) #Finds front Track Width (Front wheel center to front wheel center)
 Twr = abs(WC["RR WC"][1]) + abs(WC["RL WC"][1]) #Finds Rear Track Width (Front wheel Center to front wheel center)
@@ -425,16 +425,29 @@ BR_FOS = colour_arms_graph_FOS(list(SSC_Fos.transpose()[SSC_Fos.index.values[0]]
 #%% Run imputs
 param_names = pd.concat([LandB_var["Description"], SSC_var["Description"]])
 units_names = pd.concat([LandB_var["unit"], SSC_var["unit"]])
-var_val_list = paramsLandB + paramsSSC
+var_val_list = paramsLandB + paramsSSC #+other load cases when they become available
+var_value_frame = pd.DataFrame(var_val_list, index = list(param_names.index.values))
+var_value_frame.columns = ["Value"]
+var_value = pd.concat([param_names, var_value_frame, units_names], axis=1)
+#%% other params
+Backend_variable = [Wfs, Wrs, Wb, Twf, Twr, c, b]  
+Backend_Description = ["Front static weight", "Rear static weight", "Wheel Base",  "Front Track Width", "Rear Track Width",  "Center of Gravity to Rear Axle",  "Center of Gravity to Front Axle"]
+Backend_units = ["lbs", "lbs", "in", "in", "in", "in", "in"]
+Backend_frame = pd.DataFrame([Backend_Description, Backend_variable, Backend_units]).transpose()
+Backend_frame.columns = (list(var_value))
 #%% End Spreadsheets: Gives a final report in a spreadsheet
 
 Arm_info = pd.concat([mag_frame, Arm_mat, TMass_frame, Fos_data]) # gives all information on arm material, lengths, and critical loads
 Overview_Frame = pd.concat([LA_Forces_Frame, LA_Fos, BR_Forces_Frame, BR_Fos, B_Forces_Frame, B_Fos, SSC_Forces_Frame, SSC_Fos])
-"""
+input_info = pd.concat([var_value, Backend_frame]).set_index("Description")
+
 with pd.ExcelWriter('Summary_report_' + str(Version_number) +'.xlsx') as writer:
     Arm_info.to_excel(writer, sheet_name='Arm_setup_information')
     Overview_Frame.to_excel(writer, sheet_name='Cases_and_FOS')
-"""
+    input_info.to_excel(writer, sheet_name = "Model Input Values")
+    points.to_excel(writer, sheet_name = "Model Suspension Points")
+    WC.to_excel(writer, sheet_name = "Model Wheel Center Points")
+    TP.to_excel(writer, sheet_name = "Model Tire Patch Center Points")
 
 
 
