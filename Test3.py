@@ -154,12 +154,12 @@ plt.close()
 plt.show(block=True)
 #%% Functions
 def getInputLandB():
-    We = WeV.get()
-    F = FV.get()
-    R = RV.get()
-    mu = muV.get()
-    h = hV.get()
-    r = rV.get()
+    We = WeV.get() #Vehicle weight
+    F = FV.get() #Front weight distribution 
+    R = RV.get() # Rear weight distribution
+    mu = muV.get() # tire to road maximum coef of friction
+    h = hV.get() # center of gravity height
+    r = rV.get() #
     g = gV.get()
     Dx = DxV.get()
     G_bump = G_bumpV.get()
@@ -423,8 +423,6 @@ SSC_Fos = Fos_maker(SSC_Forces_Frame, "Steady State Cornering at " + str(round(l
 SSC_Pos_Neg = colour_arms_graph_TC(SSC_Forces_List, Pos_neg_Cmap_scale, 4, "Steady State Cornering at " + str(round(lateral_accel, 1)) + "G (lbf)", 'seismic')
 BR_FOS = colour_arms_graph_FOS(list(SSC_Fos.transpose()[SSC_Fos.index.values[0]]), FOS_scale, 3, "Steady State Cornering at" + str(round(lateral_accel, 1)) + " G (FOS)", 'jet_r')
 #%% End Spreadsheets: Gives a final report in a spreadsheet
-#LA_Forces.to_excel("Force_due_to_Linear_Acceleration_of_" + str(g_lin) + "_G.xlsx")
-#BR_Forces.to_excel("Force_due_to_Linear_Deceleration_of_" + str(Dx) + "_G.xlsx")
 Arm_info = pd.concat([mag_frame, Arm_mat, TMass_frame, Fos_data]) # gives all information on arm material, lengths, and critical loads
 Overview_Frame = pd.concat([LA_Forces_Frame, LA_Fos, BR_Forces_Frame, BR_Fos, B_Forces_Frame, B_Fos, SSC_Forces_Frame, SSC_Fos])
 
