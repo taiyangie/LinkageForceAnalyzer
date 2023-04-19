@@ -422,16 +422,19 @@ SSC_Fos = Fos_maker(SSC_Forces_Frame, "Steady State Cornering at " + str(round(l
 #%% Graphing SSC
 SSC_Pos_Neg = colour_arms_graph_TC(SSC_Forces_List, Pos_neg_Cmap_scale, 4, "Steady State Cornering at " + str(round(lateral_accel, 1)) + "G (lbf)", 'seismic')
 BR_FOS = colour_arms_graph_FOS(list(SSC_Fos.transpose()[SSC_Fos.index.values[0]]), FOS_scale, 3, "Steady State Cornering at" + str(round(lateral_accel, 1)) + " G (FOS)", 'jet_r')
+#%% Run imputs
+param_names = pd.concat([LandB_var["Description"], SSC_var["Description"]])
+units_names = pd.concat([LandB_var["unit"], SSC_var["unit"]])
+var_val_list = paramsLandB + paramsSSC
 #%% End Spreadsheets: Gives a final report in a spreadsheet
+
 Arm_info = pd.concat([mag_frame, Arm_mat, TMass_frame, Fos_data]) # gives all information on arm material, lengths, and critical loads
 Overview_Frame = pd.concat([LA_Forces_Frame, LA_Fos, BR_Forces_Frame, BR_Fos, B_Forces_Frame, B_Fos, SSC_Forces_Frame, SSC_Fos])
-
+"""
 with pd.ExcelWriter('Summary_report_' + str(Version_number) +'.xlsx') as writer:
     Arm_info.to_excel(writer, sheet_name='Arm_setup_information')
     Overview_Frame.to_excel(writer, sheet_name='Cases_and_FOS')
-
-
-
+"""
 
 
 
