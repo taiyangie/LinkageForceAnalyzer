@@ -150,6 +150,8 @@ ax.plot([0,0],[0,0], [0,0], color = 'b', label = "Moment Arms")
 ax.scatter(0,0,0, color = 'magenta', label = 'Origin', s = 40, zorder = 500) # Origin
 ax.legend(loc = 'best')
 ax.set(xlabel = "X (in)", ylabel = 'Y (in)', zlabel = 'Z (in)', title = "Geometry Setup Check")
+fig1.set_facecolor('grey')
+ax.set_facecolor('grey')
 plt.close()
 plt.show(block=True)
 #%% Functions

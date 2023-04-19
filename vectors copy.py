@@ -90,22 +90,27 @@ for i in range(0, len(arm_list)): #Arms and Points
     arrow_prop_dict = dict(mutation_scale=15, arrowstyle='-|>', color='k', shrinkA=0, shrinkB=0)
     a = Arrow3D(x,y,z, **arrow_prop_dict)
     ax.add_artist(a)
+
 for i in range(0, len(WC_list)): #Wheel Centers
     x = WC[WC_list[i]][WC_axis_list[0]]
     y = WC[WC_list[i]][WC_axis_list[1]]
     z = WC[WC_list[i]][WC_axis_list[2]]
     ax.scatter(x,y,z, c='green', s = 40)
+"""
 for i in range(0, len(TP_list)): #Tire Patch Centers
     x = TP[TP_list[i]][TP_axis_list[0]]
     y = TP[TP_list[i]][TP_axis_list[1]]
     z = TP[TP_list[i]][TP_axis_list[2]]
     ax.scatter(x,y,z, c='darkorange', s = 40)
+"""
 WC_graphing(FR_list, "FR WC")
 WC_graphing(FL_list, "FL WC")
 WC_graphing(RR_list, "RR WC")
 WC_graphing(RL_list, "RL WC")
 #colours for legend hidden in origin
-
+ax.scatter(0,0,0, color = 'green', label = 'Wheel Centers', s = 20, zorder = 1)
+ax.plot([0,0],[0,0], [0,0], color = 'k', label = "Suspension Arms")
+ax.plot([0,0],[0,0], [0,0], color = 'b', label = "Moment Arms")
 # Origin also hides other points
 ax.scatter(0,0,0, color = 'magenta', label = 'Origin', s = 40, zorder = 500) # Origin
 ax.legend(loc = 'best')
